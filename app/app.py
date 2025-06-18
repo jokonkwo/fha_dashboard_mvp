@@ -73,75 +73,82 @@ with tab1:
     end_display = filtered_df["Hour_Timestamp"].max().strftime("%b %Y")
     st.header(f"Air Quality Summary ({start_display} - {end_display})")
 
-    # Inline ZIP filter inside Overview tab
-    st.subheader("Filter ZIP Codes:")
-    selected_zips_inline = st.multiselect(
-        "", zip_codes, default=selected_zips, label_visibility="collapsed"
-    )
+    # Inline ZIP filter inside Overview tab (sleeker placement)
+    with st.expander("Filter ZIP Codes", expanded=False):
+        selected_zips_inline = st.multiselect(
+            "", zip_codes, default=selected_zips, label_visibility="collapsed"
+        )
     filtered_df = filtered_df[filtered_df["Zip_Code"].isin(selected_zips_inline)]
 
-    # Recalculate summary after filtering
-    latest = filtered_df.sort_values("Hour_Timestamp").groupby("Zip_Code").tail(1)
-    avg_aqi = round(filtered_df["Avg_AQI"].mean(), 1)
-    
-    best_zip = latest.loc[latest["Avg_AQI"].idxmin()]
-    worst_zip = latest.loc[latest["Avg_AQI"].idxmax()]
+    # Sub-tabs inside Overview tab
+    subtab1, subtab2, subtab3 = st.tabs(["🔢 Summary Metrics", "🎯 AQI Categories", "📅 Monthly AQI"])
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("🌡 Avg AQI", avg_aqi)
-    col2.metric("✅ Best ZIP", f"{best_zip['Zip_Code']} ({round(best_zip['Avg_AQI'],1)})")
-    col3.metric("🔥 Worst ZIP", f"{worst_zip['Zip_Code']} ({round(worst_zip['Avg_AQI'],1)})")
+    with subtab1:
+        # Recalculate summary after filtering
+        latest = filtered_df.sort_values("Hour_Timestamp").groupby("Zip_Code").tail(1)
+        avg_aqi = round(filtered_df["Avg_AQI"].mean(), 1)
+        
+        best_zip = latest.loc[latest["Avg_AQI"].idxmin()]
+        worst_zip = latest.loc[latest["Avg_AQI"].idxmax()]
 
-    # AQI Category pie chart with EPA colors
-    def categorize_aqi(aqi):
-        if aqi <= 50: return "Good"
-        elif aqi <= 100: return "Moderate"
-        elif aqi <= 150: return "Unhealthy (Sensitive)"
-        elif aqi <= 200: return "Unhealthy"
-        elif aqi <= 300: return "Very Unhealthy"
-        else: return "Hazardous"
+        col1, col2, col3 = st.columns(3)
+        col1.metric("🌡 Avg AQI", avg_aqi, help="Overall average AQI for selected ZIP codes and dates.")
+        col2.metric("✅ Best ZIP", f"{best_zip['Zip_Code']} ({round(best_zip['Avg_AQI'],1)})",
+                    help="ZIP code with lowest AQI in latest readings.")
+        col3.metric("🔥 Worst ZIP", f"{worst_zip['Zip_Code']} ({round(worst_zip['Avg_AQI'],1)})",
+                    help="ZIP code with highest AQI in latest readings.")
 
-    filtered_df["AQI_Category"] = filtered_df["Avg_AQI"].apply(categorize_aqi)
-    cat_counts = filtered_df["AQI_Category"].value_counts().reset_index()
-    cat_counts.columns = ["Category", "Count"]
+    with subtab2:
+        # AQI Category pie chart with EPA colors
+        def categorize_aqi(aqi):
+            if aqi <= 50: return "Good"
+            elif aqi <= 100: return "Moderate"
+            elif aqi <= 150: return "Unhealthy (Sensitive)"
+            elif aqi <= 200: return "Unhealthy"
+            elif aqi <= 300: return "Very Unhealthy"
+            else: return "Hazardous"
 
-    color_map = {
-        "Good": "#00e400",
-        "Moderate": "#ffff00",
-        "Unhealthy (Sensitive)": "#ff7e00",
-        "Unhealthy": "#ff0000",
-        "Very Unhealthy": "#8f3f97",
-        "Hazardous": "#7e0023"
-    }
+        filtered_df["AQI_Category"] = filtered_df["Avg_AQI"].apply(categorize_aqi)
+        cat_counts = filtered_df["AQI_Category"].value_counts().reset_index()
+        cat_counts.columns = ["Category", "Count"]
 
-    fig = px.pie(
-        cat_counts,
-        names="Category",
-        values="Count",
-        color="Category",
-        color_discrete_map=color_map,
-        title="AQI Category Distribution"
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        color_map = {
+            "Good": "#00e400",
+            "Moderate": "#ffff00",
+            "Unhealthy (Sensitive)": "#ff7e00",
+            "Unhealthy": "#ff0000",
+            "Very Unhealthy": "#8f3f97",
+            "Hazardous": "#7e0023"
+        }
 
-    # Monthly AQI by ZIP (keep existing table)
-    st.subheader("Monthly AQI by ZIP")
-    df_table = filtered_df.copy()
-    df_table["Year"] = df_table["Hour_Timestamp"].dt.year
-    df_table["Month"] = df_table["Hour_Timestamp"].dt.month_name()
+        fig = px.pie(
+            cat_counts,
+            names="Category",
+            values="Count",
+            color="Category",
+            color_discrete_map=color_map,
+            title="AQI Category Distribution"
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-    year_options = sorted(df_table["Year"].unique(), reverse=True)
-    selected_year = st.selectbox("Year", year_options)
-    month_options = df_table[df_table["Year"] == selected_year]["Month"].unique()
-    selected_month = st.selectbox("Month", sorted(month_options))
+    with subtab3:
+        # Monthly AQI by ZIP table
+        df_table = filtered_df.copy()
+        df_table["Year"] = df_table["Hour_Timestamp"].dt.year
+        df_table["Month"] = df_table["Hour_Timestamp"].dt.month_name()
 
-    month_df = df_table[(df_table["Year"] == selected_year) & (df_table["Month"] == selected_month)]
-    zip_summary = month_df.groupby("Zip_Code").agg(
-        Avg_AQI=("Avg_AQI", "mean"),
-        Max_AQI=("Avg_AQI", "max")
-    ).reset_index().round(1)
+        year_options = sorted(df_table["Year"].unique(), reverse=True)
+        selected_year = st.selectbox("Year", year_options, key="year_select")
+        month_options = df_table[df_table["Year"] == selected_year]["Month"].unique()
+        selected_month = st.selectbox("Month", sorted(month_options), key="month_select")
 
-    st.dataframe(zip_summary, use_container_width=True)
+        month_df = df_table[(df_table["Year"] == selected_year) & (df_table["Month"] == selected_month)]
+        zip_summary = month_df.groupby("Zip_Code").agg(
+            Avg_AQI=("Avg_AQI", "mean"),
+            Max_AQI=("Avg_AQI", "max")
+        ).reset_index().round(1)
+
+        st.dataframe(zip_summary, use_container_width=True)
 
 # ---------------
 # Trends Tab
