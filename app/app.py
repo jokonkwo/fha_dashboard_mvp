@@ -4,13 +4,27 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import requests
+import os
 
 # ---------------
 # Load Data
 # ---------------
 @st.cache_data
 def load_data():
-    conn = duckdb.connect("../data/dummy_air_quality.duckdb", read_only=True)
+    dropbox_url = "https://www.dropbox.com/scl/fi/2wcl5m09a62yy1myvect7/dummy_air_quality.duckdb?rlkey=n1d4iohcx0qlt3z2pwm8l7osv&st=4nzlsvar&dl=1"
+
+    local_path = "/tmp/dummy_air_quality.duckdb"
+
+    # Download from Dropbox if not already downloaded
+    if not os.path.exists(local_path):
+        st.info("Downloading database from Dropbox...")
+        response = requests.get(dropbox_url)
+        with open(local_path, "wb") as f:
+            f.write(response.content)
+        st.success("Download complete.")
+
+    conn = duckdb.connect(local_path, read_only=True)
     df_hourly = conn.execute("SELECT * FROM air_quality_hourly").fetchdf()
     conn.close()
     return df_hourly
