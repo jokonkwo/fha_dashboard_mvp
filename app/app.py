@@ -68,11 +68,9 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Trends", "🗺 Map", "�
 # Overview Tab
 # ---------------
 with tab1:
-    # ---------------- Global Filters ----------------
-
     st.header("Air Quality Summary")
 
-    # --- ZIP Code Filter ---
+    # ---------------- Global ZIP Code Filter ----------------
     with st.expander("Filter ZIP Codes", expanded=False):
         if "selected_zips" not in st.session_state:
             st.session_state.selected_zips = zip_codes.copy()
@@ -87,42 +85,64 @@ with tab1:
             selected_zips = zip_codes
             st.session_state.selected_zips = zip_codes.copy()
 
-    # --- Date Period Filter (Month Granularity) ---
+    # ---------------- Global Cascading Date Filter ----------------
     with st.expander("Filter Date Period", expanded=False):
-        min_month = df["Hour_Timestamp"].min().replace(day=1)
-        max_month = df["Hour_Timestamp"].max().replace(day=1)
-        date_options = pd.date_range(min_month, max_month, freq="MS").strftime("%b %Y").tolist()
+        # Generate all Year-Month pairs available in data
+        df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
+        year_month_pairs = [(p.year, p.month) for p in df_dates]
 
-        if "start_month" not in st.session_state:
-            st.session_state.start_month = date_options[0]
-            st.session_state.end_month = date_options[-1]
+        # Build year options
+        years = sorted(set(y for y, m in year_month_pairs))
 
-        col_start, col_end = st.columns(2)
-        start_month = col_start.selectbox(
-            "Start Month", date_options, index=date_options.index(st.session_state.start_month)
+        # Use session_state to preserve selection across reruns
+        if "selected_year_start" not in st.session_state:
+            st.session_state.selected_year_start = years[0]
+            st.session_state.selected_year_end = years[-1]
+
+        # Year selection
+        col1, col2 = st.columns(2)
+        selected_year_start = col1.selectbox("Start Year", years, index=years.index(st.session_state.selected_year_start))
+        selected_year_end = col2.selectbox("End Year", years, index=years.index(st.session_state.selected_year_end))
+
+        # Month options depend on selected year
+        months_lookup = {
+            year: sorted(m for y, m in year_month_pairs if y == year) for year in years
+        }
+
+        # Default months
+        default_start_month = months_lookup[selected_year_start][0]
+        default_end_month = months_lookup[selected_year_end][-1]
+
+        # Month selection
+        col3, col4 = st.columns(2)
+        selected_month_start = col3.selectbox(
+            "Start Month", 
+            [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year_start]],
+            index=0
         )
-        end_month = col_end.selectbox(
-            "End Month", date_options, index=date_options.index(st.session_state.end_month)
+        selected_month_end = col4.selectbox(
+            "End Month",
+            [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year_end]],
+            index=len(months_lookup[selected_year_end])-1
         )
 
         if st.button("Reset Period"):
-            start_month = date_options[0]
-            end_month = date_options[-1]
-            st.session_state.start_month = start_month
-            st.session_state.end_month = end_month
+            selected_year_start = years[0]
+            selected_year_end = years[-1]
 
-        # Convert back to datetime for filtering
-        start_dt = pd.to_datetime(start_month, format="%b %Y")
-        end_dt = pd.to_datetime(end_month, format="%b %Y") + pd.offsets.MonthEnd(1)
+        # Convert final selection to datetime objects
+        start_dt = datetime.strptime(f"{selected_month_start} {selected_year_start}", "%B %Y")
+        end_dt = datetime.strptime(f"{selected_month_end} {selected_year_end}", "%B %Y")
+        end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
 
-    # Apply both filters
+    # ---------------- Apply Both Filters ----------------
     filtered_df = df[
         (df["Zip_Code"].isin(selected_zips)) &
         (df["Hour_Timestamp"] >= start_dt) &
         (df["Hour_Timestamp"] <= end_dt)
     ]
 
-    # Display selected period as sub-header
+    # Sub-header showing selected period
     st.markdown(
         f"<h5 style='color: grey; margin-top: -10px;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>",
         unsafe_allow_html=True
@@ -195,6 +215,8 @@ with tab1:
                 color_discrete_map=color_map,
                 title="AQI Category Distribution"
             )
+            fig.update_traces(sort=False)  # <-- forces correct slice + legend order
+
             st.plotly_chart(fig, use_container_width=True)
 
 # ---------------
