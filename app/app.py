@@ -60,7 +60,7 @@ filtered_df = df[
 # ---------------
 # Main Layout: Tabs
 # ---------------
-st.title("🌫 Fresno Air Quality Dashboard")
+st.title("🌫 FHA - Air Quality Dashboard")
 
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Trends", "🗺 Map", "ℹ️ About"])
 
@@ -68,12 +68,18 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Trends", "🗺 Map", "�
 # Overview Tab
 # ---------------
 with tab1:
-    # Dynamic date range for title
+    # Dynamic date range
     start_display = filtered_df["Hour_Timestamp"].min().strftime("%b %Y")
     end_display = filtered_df["Hour_Timestamp"].max().strftime("%b %Y")
-    st.header(f"Air Quality Summary ({start_display} - {end_display})")
+    
+    # Clean header + sub-header
+    st.header("Air Quality Summary")
+    st.markdown(
+        f"<h5 style='color: grey; margin-top: -10px;'>({start_display} - {end_display})</h5>",
+        unsafe_allow_html=True
+    )
 
-    # Inline ZIP filter inside Overview tab (sleeker placement)
+    # Inline ZIP filter inside Overview tab
     with st.expander("Filter ZIP Codes", expanded=False):
         selected_zips_inline = st.multiselect(
             "", zip_codes, default=selected_zips, label_visibility="collapsed"
@@ -81,10 +87,10 @@ with tab1:
     filtered_df = filtered_df[filtered_df["Zip_Code"].isin(selected_zips_inline)]
 
     # Sub-tabs inside Overview tab
-    subtab1, subtab2, subtab3 = st.tabs(["🔢 Summary Metrics", "🎯 AQI Categories", "📅 Monthly AQI"])
+    subtab1, subtab2, subtab3 = st.tabs(["🔢 Summary Metrics", "🎯 AQI Categories", "📅 Custom Period Table"])
 
+    # ---------------- Summary Metrics Sub-Tab ----------------
     with subtab1:
-        # Recalculate summary after filtering
         latest = filtered_df.sort_values("Hour_Timestamp").groupby("Zip_Code").tail(1)
         avg_aqi = round(filtered_df["Avg_AQI"].mean(), 1)
         
@@ -98,8 +104,8 @@ with tab1:
         col3.metric("🔥 Worst ZIP", f"{worst_zip['Zip_Code']} ({round(worst_zip['Avg_AQI'],1)})",
                     help="ZIP code with highest AQI in latest readings.")
 
+    # ---------------- AQI Category Distribution Sub-Tab ----------------
     with subtab2:
-        # AQI Category pie chart with EPA colors
         def categorize_aqi(aqi):
             if aqi <= 50: return "Good"
             elif aqi <= 100: return "Moderate"
@@ -111,6 +117,19 @@ with tab1:
         filtered_df["AQI_Category"] = filtered_df["Avg_AQI"].apply(categorize_aqi)
         cat_counts = filtered_df["AQI_Category"].value_counts().reset_index()
         cat_counts.columns = ["Category", "Count"]
+
+        # Force correct category order
+        category_order = [
+            "Good", "Moderate", "Unhealthy (Sensitive)", 
+            "Unhealthy", "Very Unhealthy", "Hazardous"
+        ]
+
+        cat_counts["Category"] = pd.Categorical(
+            cat_counts["Category"], 
+            categories=category_order, 
+            ordered=True
+        )
+        cat_counts = cat_counts.sort_values("Category")
 
         color_map = {
             "Good": "#00e400",
@@ -131,19 +150,30 @@ with tab1:
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    # ---------------- Custom Date Range Table Sub-Tab ----------------
     with subtab3:
-        # Monthly AQI by ZIP table
         df_table = filtered_df.copy()
-        df_table["Year"] = df_table["Hour_Timestamp"].dt.year
-        df_table["Month"] = df_table["Hour_Timestamp"].dt.month_name()
 
-        year_options = sorted(df_table["Year"].unique(), reverse=True)
-        selected_year = st.selectbox("Year", year_options, key="year_select")
-        month_options = df_table[df_table["Year"] == selected_year]["Month"].unique()
-        selected_month = st.selectbox("Month", sorted(month_options), key="month_select")
+        # Generate full month list
+        min_month = df_table["Hour_Timestamp"].min().replace(day=1)
+        max_month = df_table["Hour_Timestamp"].max().replace(day=1)
+        date_options = pd.date_range(min_month, max_month, freq="MS").strftime("%b %Y").tolist()
 
-        month_df = df_table[(df_table["Year"] == selected_year) & (df_table["Month"] == selected_month)]
-        zip_summary = month_df.groupby("Zip_Code").agg(
+        col_start, col_end = st.columns(2)
+        start_month = col_start.selectbox("Start Month", date_options, index=0)
+        end_month = col_end.selectbox("End Month", date_options, index=len(date_options)-1)
+
+        # Convert selections back to datetime for filtering
+        start_dt = pd.to_datetime(start_month, format="%b %Y")
+        end_dt = pd.to_datetime(end_month, format="%b %Y") + pd.offsets.MonthEnd(1)
+
+        # Filter table based on custom period
+        period_df = df_table[
+            (df_table["Hour_Timestamp"] >= start_dt) &
+            (df_table["Hour_Timestamp"] <= end_dt)
+        ]
+
+        zip_summary = period_df.groupby("Zip_Code").agg(
             Avg_AQI=("Avg_AQI", "mean"),
             Max_AQI=("Avg_AQI", "max")
         ).reset_index().round(1)
