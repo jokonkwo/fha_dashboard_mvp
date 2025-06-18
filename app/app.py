@@ -68,19 +68,31 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Trends", "🗺 Map", "�
 # Overview Tab
 # ---------------
 with tab1:
-    st.header("Air Quality Summary")
+    # Dynamic date range for title
+    start_display = filtered_df["Hour_Timestamp"].min().strftime("%b %Y")
+    end_display = filtered_df["Hour_Timestamp"].max().strftime("%b %Y")
+    st.header(f"Air Quality Summary ({start_display} - {end_display})")
 
+    # Inline ZIP filter inside Overview tab
+    st.subheader("Filter ZIP Codes:")
+    selected_zips_inline = st.multiselect(
+        "", zip_codes, default=selected_zips, label_visibility="collapsed"
+    )
+    filtered_df = filtered_df[filtered_df["Zip_Code"].isin(selected_zips_inline)]
+
+    # Recalculate summary after filtering
     latest = filtered_df.sort_values("Hour_Timestamp").groupby("Zip_Code").tail(1)
     avg_aqi = round(filtered_df["Avg_AQI"].mean(), 1)
-    worst_zip = latest.loc[latest["Avg_AQI"].idxmax(), "Zip_Code"]
-    worst_aqi = latest["Avg_AQI"].max()
+    
+    best_zip = latest.loc[latest["Avg_AQI"].idxmin()]
+    worst_zip = latest.loc[latest["Avg_AQI"].idxmax()]
 
     col1, col2, col3 = st.columns(3)
     col1.metric("🌡 Avg AQI", avg_aqi)
-    col2.metric("📍 Worst ZIP", worst_zip)
-    col3.metric("🔥 Max AQI", int(worst_aqi))
+    col2.metric("✅ Best ZIP", f"{best_zip['Zip_Code']} ({round(best_zip['Avg_AQI'],1)})")
+    col3.metric("🔥 Worst ZIP", f"{worst_zip['Zip_Code']} ({round(worst_zip['Avg_AQI'],1)})")
 
-    # Pie chart of AQI Categories
+    # AQI Category pie chart with EPA colors
     def categorize_aqi(aqi):
         if aqi <= 50: return "Good"
         elif aqi <= 100: return "Moderate"
@@ -88,15 +100,31 @@ with tab1:
         elif aqi <= 200: return "Unhealthy"
         elif aqi <= 300: return "Very Unhealthy"
         else: return "Hazardous"
-    
+
     filtered_df["AQI_Category"] = filtered_df["Avg_AQI"].apply(categorize_aqi)
     cat_counts = filtered_df["AQI_Category"].value_counts().reset_index()
     cat_counts.columns = ["Category", "Count"]
 
-    fig = px.pie(cat_counts, names="Category", values="Count", title="AQI Category Distribution")
+    color_map = {
+        "Good": "#00e400",
+        "Moderate": "#ffff00",
+        "Unhealthy (Sensitive)": "#ff7e00",
+        "Unhealthy": "#ff0000",
+        "Very Unhealthy": "#8f3f97",
+        "Hazardous": "#7e0023"
+    }
+
+    fig = px.pie(
+        cat_counts,
+        names="Category",
+        values="Count",
+        color="Category",
+        color_discrete_map=color_map,
+        title="AQI Category Distribution"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Monthly ZIP Table
+    # Monthly AQI by ZIP (keep existing table)
     st.subheader("Monthly AQI by ZIP")
     df_table = filtered_df.copy()
     df_table["Year"] = df_table["Hour_Timestamp"].dt.year
