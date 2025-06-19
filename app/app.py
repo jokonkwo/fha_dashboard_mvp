@@ -84,7 +84,10 @@ df = load_data()
 df['Hour_Timestamp'] = pd.to_datetime(df['Hour_Timestamp'])
 zip_codes = sorted(df["Zip_Code"].unique())
 
-# ---------------- Global Filters ABOVE TITLE ----------------
+# ---------------- Title ----------------
+st.title("🌫 FHA - Air Quality Dashboard")
+
+# ------------ Global Filters -----------
 st.markdown("""<h6 style='margin-bottom:5px;'>\U0001F50E <u>Global Filters</u></h6>""", unsafe_allow_html=True)
 
 # First row: ZIP Code Filter
@@ -124,12 +127,9 @@ with col4:
 start_dt = datetime.strptime(f"{month_start} {year_start}", "%B %Y")
 end_dt = datetime.strptime(f"{month_end} {year_end}", "%B %Y")
 end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
+st.markdown(f"<h5 style='color: grey;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>", unsafe_allow_html=True)
 
 filtered_df = df[(df["Zip_Code"].isin(selected_zips)) & (df["Hour_Timestamp"] >= start_dt) & (df["Hour_Timestamp"] <= end_dt)]
-
-# ---------------- Title ----------------
-st.title("🌫 FHA - Air Quality Dashboard")
-st.markdown(f"<h5 style='color: grey;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>", unsafe_allow_html=True)
 
 # ---------------
 # Main Tabs
