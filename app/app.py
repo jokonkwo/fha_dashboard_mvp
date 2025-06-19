@@ -255,7 +255,7 @@ with tab1:
 # ---------------
 with tab2:
     st.header("Time Trends")
-    subtab1, subtab2 = st.tabs(["📅 Monthly AQI Trends", "Time-of-Day Heatmap"])
+    subtab1, subtab2 = st.tabs(["📅 Monthly AQI Trends", "⌚ Time-of-Day Heatmap"])
 
     with subtab1:
         if filtered_df.empty:
@@ -331,6 +331,27 @@ with tab2:
                     """,
                     unsafe_allow_html=True
                 )
+    
+    with subtab2:
+        if filtered_df.empty:
+            st.warning("No data available for selected filters.")
+        else:
+            st.subheader("Time-of-Day Trends (Average AQI by Hour of Day)")
+
+            # Aggregate across hours
+            hourly_df = filtered_df.copy()
+            hourly_df["Hour"] = hourly_df["Hour_Timestamp"].dt.hour
+            hour_avg = hourly_df.groupby("Hour")["Avg_AQI"].mean().reset_index()
+
+            fig_hour = px.line(hour_avg, x="Hour", y="Avg_AQI", markers=True,
+                               title="Average AQI Pattern Across 24 Hours",
+                               labels={"Hour": "Hour of Day", "Avg_AQI": "Average AQI"})
+            fig_hour.update_layout(xaxis=dict(tickmode="linear", dtick=1))
+            st.plotly_chart(fig_hour, use_container_width=True)
+
+            st.markdown("<p style='font-size:0.9em; color:grey;'>**How air quality varies throughout the day:** This chart shows the average AQI for each hour, aggregated across your selected ZIP codes and time period.</p>", unsafe_allow_html=True)
+
+
 
 # ---------------
 # Map Tab
