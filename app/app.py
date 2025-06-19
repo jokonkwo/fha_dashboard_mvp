@@ -90,12 +90,22 @@ zip_codes = sorted(df["Zip_Code"].unique())
 st.title("🌫 FHA - Air Quality Dashboard")
 
 # ---- Global Filters Section ----
-st.subheader("🔎 Global Filters")
+st.subheader("🔎 Filters")
 
 # ---------------- ZIP Code Filter ----------------
-with st.sidebar.expander("Select ZIP Codes", expanded=True):
-    zip_checks = {z: st.checkbox(z, value=True) for z in zip_codes}
-    selected_zips = [z for z, checked in zip_checks.items() if checked]
+with st.expander("Filter ZIP Codes", expanded=False):
+    if "selected_zips" not in st.session_state:
+        st.session_state.selected_zips = zip_codes.copy()
+
+    selected_zips = st.multiselect(
+        "ZIP Codes:", zip_codes,
+        default=st.session_state.selected_zips,
+        key="zip_filter"
+    )
+
+    if st.button("Reset ZIPs"):
+        selected_zips = zip_codes
+        st.session_state.selected_zips = zip_codes.copy()
 st.markdown(f"<h5 style='color: grey; margin-top: -10px;'>(Total ZIP Codes: {len(selected_zips)})</h5>", unsafe_allow_html=True)
 
 # ---------------- Cascading Date Filter ----------------
