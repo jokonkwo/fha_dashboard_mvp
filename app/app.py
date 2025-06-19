@@ -8,8 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import requests
-import json
 import geopandas as gpd
+import json
 
 
 
@@ -86,17 +86,34 @@ def load_data():
 # -------------------------------
 @st.cache_data
 def load_geojson():
-    local_geo_path = "/tmp/fresno_zips.geojson"
+    local_path = "/tmp/fresno_zipcodes.geojson"
+    rev_path = "/tmp/fresno_zipcodes.rev"
+
+    st.info("Checking Dropbox for latest geojson...")
 
     dbx = create_dropbox_client()
-    with open(local_geo_path, "wb") as f:
+
+    metadata = dbx.files_get_metadata(DROPBOX_GEOJSON_PATH)
+    remote_rev = metadata.rev
+
+    if os.path.exists(local_path) and os.path.exists(rev_path):
+        with open(rev_path, "r") as f:
+            local_rev = f.read().strip()
+        if local_rev == remote_rev:
+            st.success("GeoJSON is up-to-date.")
+            return gpd.read_file(local_path)
+
+    st.info("New version detected. Downloading updated GeoJSON from Dropbox...")
+
+    with open(local_path, "wb") as f:
         metadata, res = dbx.files_download(DROPBOX_GEOJSON_PATH)
         f.write(res.content)
 
-    with open(local_geo_path) as f:
-        geojson_data = json.load(f)
-    geo_gdf = gpd.GeoDataFrame.from_features(geojson_data["features"])
-    return geo_gdf
+    with open(rev_path, "w") as f:
+        f.write(remote_rev)
+
+    st.success("GeoJSON download complete.")
+    return gpd.read_file(local_path)
 
 # ---------------
 # Load Data
@@ -390,7 +407,7 @@ with tab3:
         st.warning("No data available for selected filters.")
     else:
         # Load Fresno County GeoJSON
-        geojson_path = "path/to/Fresno_County_ZipCodes.geojson"  # <-- update this to actual location
+        geojson_path = "path/to/Fresno_County_ZipCodes.geojson"  # <-- update this
         geo_gdf = gpd.read_file(geojson_path)
 
         # Aggregate data per ZIP
@@ -404,7 +421,7 @@ with tab3:
 
         # Assign AQI color buckets
         def aqi_color(aqi):
-            if pd.isna(aqi): return "#d3d3d3"  # light grey for missing zips
+            if pd.isna(aqi): return "#d3d3d3"
             if aqi <= 50: return "#00e400"
             elif aqi <= 100: return "#ffff00"
             elif aqi <= 150: return "#ff7e00"
@@ -414,25 +431,26 @@ with tab3:
 
         geo_gdf["Color"] = geo_gdf["Avg_AQI"].apply(aqi_color)
 
-        # Plot using Plotly choropleth
+        # Prepare the GeoJSON interface
+        geojson_interface = geo_gdf.set_index("ZCTA5CE10").geometry.__geo_interface__
+
+        # Build plot
         fig = px.choropleth_mapbox(
             geo_gdf,
-            geojson=geo_gdf.geometry.__geo_interface__,
-            locations=geo_gdf.index,
-            color=geo_gdf["Color"],
-            hover_name="Zip_Code",
-            hover_data={
-                "Num_Sensors": True,
-                "Avg_AQI": ":.1f",
-                "Color": False
-            },
+            geojson=geojson_interface,
+            locations="ZCTA5CE10",
+            color="Avg_AQI",
+            color_continuous_scale=[
+                "#00e400", "#ffff00", "#ff7e00", "#ff0000", "#8f3f97", "#7e0023"
+            ],
+            range_color=(0, 300),
             mapbox_style="carto-positron",
             center={"lat": 36.74, "lon": -119.78},
             zoom=9,
-            opacity=0.6
+            opacity=0.6,
+            custom_data=["Zip_Code", "Num_Sensors", "Avg_AQI"]
         )
 
-        # Custom hovertemplate
         fig.update_traces(
             hovertemplate=(
                 "<b>Zip Code:</b> %{customdata[0]}<br>"
