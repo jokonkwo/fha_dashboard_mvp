@@ -349,7 +349,7 @@ with tab2:
             fig_hour.update_layout(xaxis=dict(tickmode="linear", dtick=1))
             st.plotly_chart(fig_hour, use_container_width=True)
 
-            st.markdown("<p style='font-size:0.9em; color:grey;'>**How air quality varies throughout the day:** This chart shows the average AQI for each hour, aggregated across your selected ZIP codes and time period.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size:0.9em; color:grey;'><b>How air quality varies throughout the day:</b><br>This chart shows the average AQI for each hour, aggregated across your selected ZIP codes and time period.</p>", unsafe_allow_html=True)
 
 
 
