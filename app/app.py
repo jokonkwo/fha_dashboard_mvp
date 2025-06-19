@@ -84,59 +84,43 @@ df = load_data()
 df['Hour_Timestamp'] = pd.to_datetime(df['Hour_Timestamp'])
 zip_codes = sorted(df["Zip_Code"].unique())
 
-# ---------------
-# Title and Global Filters (Apply to all tabs)
-# ---------------
-st.title("🌫 FHA - Air Quality Dashboard")
+# ---------------- Global Filters ABOVE TITLE ----------------
+st.markdown("""<h6 style='margin-bottom:5px;'>\U0001F50E <u>Global Filters</u></h6>""", unsafe_allow_html=True)
 
-# ---- Global Filters Section ----
-st.subheader("🔎 Filters")
+filter_col1, filter_col2 = st.columns(2)
 
-# ---------------- ZIP Code Filter ----------------
-with st.expander("Filter ZIP Codes", expanded=False):
-    if "selected_zips" not in st.session_state:
-        st.session_state.selected_zips = zip_codes.copy()
+with filter_col1:
+    st.markdown("<small>ZIP Codes:</small>", unsafe_allow_html=True)
+    selected_zips = st.multiselect("", zip_codes, default=zip_codes, key="zip_filter")
+    st.markdown(f"<small>Total ZIP Codes: {len(selected_zips)}</small>", unsafe_allow_html=True)
 
-    selected_zips = st.multiselect(
-        "ZIP Codes:", zip_codes,
-        default=st.session_state.selected_zips,
-        key="zip_filter"
-    )
+with filter_col2:
+    # Date filters
+    st.markdown("<small>Date Range:</small>", unsafe_allow_html=True)
+    df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
+    year_month_pairs = [(p.year, p.month) for p in df_dates]
+    years = sorted(set(y for y, m in year_month_pairs))
+    months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
 
-    if st.button("Reset ZIPs"):
-        selected_zips = zip_codes
-        st.session_state.selected_zips = zip_codes.copy()
-st.markdown(f"<h5 style='color: grey; margin-top: -10px;'>(Total ZIP Codes: {len(selected_zips)})</h5>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        year_start = st.selectbox("Start Year", years, key="start_year")
+        start_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[year_start]]
+        month_start = st.selectbox("Start Month", start_month_options, key="start_month")
+    with col2:
+        year_end = st.selectbox("End Year", years, index=len(years)-1, key="end_year")
+        end_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[year_end]]
+        month_end = st.selectbox("End Month", end_month_options, index=len(end_month_options)-1, key="end_month")
 
-# ---------------- Cascading Date Filter ----------------
-# Extract year/month pairs
-df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
-year_month_pairs = [(p.year, p.month) for p in df_dates]
-years = sorted(set(y for y, m in year_month_pairs))
-months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
-
-# Start selections
-col1, col2 = st.columns([1, 1])
-with col1:
-    selected_year_start = st.selectbox("Start Year", years)
-    start_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year_start]]
-    selected_month_start = st.selectbox("Start Month", start_month_options)
-
-with col2:
-    selected_year_end = st.selectbox("End Year", years, index=len(years)-1)
-    end_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year_end]]
-    selected_month_end = st.selectbox("End Month", end_month_options, index=len(end_month_options)-1)
-
-start_dt = datetime.strptime(f"{selected_month_start} {selected_year_start}", "%B %Y")
-end_dt = datetime.strptime(f"{selected_month_end} {selected_year_end}", "%B %Y")
+start_dt = datetime.strptime(f"{month_start} {year_start}", "%B %Y")
+end_dt = datetime.strptime(f"{month_end} {year_end}", "%B %Y")
 end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
 
-# ---------------- Apply Global Filters ----------------
-filtered_df = df[
-    (df["Zip_Code"].isin(selected_zips)) &
-    (df["Hour_Timestamp"] >= start_dt) &
-    (df["Hour_Timestamp"] <= end_dt)
-]
+filtered_df = df[(df["Zip_Code"].isin(selected_zips)) & (df["Hour_Timestamp"] >= start_dt) & (df["Hour_Timestamp"] <= end_dt)]
+
+# ---------------- Title ----------------
+st.title("🌫 FHA - Air Quality Dashboard")
+st.markdown(f"<h5 style='color: grey;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>", unsafe_allow_html=True)
 
 # ---------------
 # Main Tabs
@@ -148,11 +132,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Trends", "🗺 Map", "�
 # ---------------------------
 with tab1:
     st.header("Air Quality Summary")
-    st.markdown(
-        f"<h5 style='color: grey; margin-top: -10px;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>",
-        unsafe_allow_html=True
-    )
-
     subtab1, subtab2 = st.tabs(["🔢 Summary Metrics", "🎯 AQI Categories"])
 
     # -------- Summary Metrics --------
