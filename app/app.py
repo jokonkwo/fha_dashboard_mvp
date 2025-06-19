@@ -20,6 +20,7 @@ DROPBOX_APP_KEY = os.getenv("DROPBOX_APP_KEY")
 DROPBOX_APP_SECRET = os.getenv("DROPBOX_APP_SECRET")
 DROPBOX_REFRESH_TOKEN = os.getenv("DROPBOX_REFRESH_TOKEN")
 DROPBOX_UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
+DROPBOX_GEOJSON_PATH = os.getenv("DROPBOX_GEOJSON_PATH")
 
 # ---------------
 # Dropbox Connection with Refresh Token
