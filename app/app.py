@@ -184,8 +184,7 @@ with tab1:
             col6.metric("📊 Total Readings (Hourly)", total_observations)
 
 # ---------- Chart Summary -----------
-            st.markdown(
-                """
+            st.markdown("""
                 <p style='margin-top:15px;'font-size:0.95em; color:grey;'>
                 <b>Quick snapshot:</b> See how overall air quality performed — including average AQI, which ZIP codes had the best and worst averages, and how often air quality was considered good or unhealthy for your selected time period.
                 </p>
@@ -324,7 +323,7 @@ with tab2:
                     f"""
                     <p style='font-size:0.9em; color:grey;'>
                         <b>Summary for {month_display}</b><br>
-                        </b>Applied ZIP Codes:</b><br>
+                        <b>Applied ZIP Codes:</b><br>
                         [{zip_list}] </b>({num_zips} total)</b><br>
                         <b>Highest AQI:</b> {max_row['Avg_AQI']:.1f} ({max_row['Date'].strftime('%m/%d/%Y')})<br>
                         <b>Lowest AQI:</b> {min_row['Avg_AQI']:.1f} ({min_row['Date'].strftime('%m/%d/%Y')})
