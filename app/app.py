@@ -8,13 +8,29 @@ import requests
 import os
 import dropbox
 from dotenv import load_dotenv
+from dropbox.oauth import OAuth2RefreshToken
 
 # ---------------
 # Load Secrets from .env
 # ---------------
 load_dotenv()
-DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
-DROPBOX_UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
+APP_KEY = os.getenv("DROPBOX_APP_KEY")
+APP_SECRET = os.getenv("DROPBOX_APP_SECRET")
+REFRESH_TOKEN = os.getenv("DROPBOX_REFRESH_TOKEN")
+UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
+
+# ---------------
+# Dropbox Connection with Refresh Token
+# ---------------
+
+def create_dropbox_client():
+    oauth2_refresh_token = dropbox.oauth.OAuth2RefreshToken(
+        app_key=DROPBOX_APP_KEY,
+        app_secret=DROPBOX_APP_SECRET,
+        refresh_token=DROPBOX_REFRESH_TOKEN
+    )
+    dbx = dropbox.Dropbox(oauth2_refresh_token)
+    return dbx
 
 # ---------------
 # Load Data (Fresh Dropbox Download)
@@ -26,7 +42,7 @@ def load_data():
 
     st.info("Checking Dropbox for latest data...")
 
-    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    dbx = create_dropbox_client()
 
     # Get remote file metadata
     metadata = dbx.files_get_metadata(DROPBOX_UPLOAD_PATH)
@@ -36,7 +52,6 @@ def load_data():
     if os.path.exists(local_path) and os.path.exists(rev_path):
         with open(rev_path, "r") as f:
             local_rev = f.read().strip()
-
         if local_rev == remote_rev:
             st.success("Local data is up-to-date.")
             conn = duckdb.connect(local_path, read_only=True)
