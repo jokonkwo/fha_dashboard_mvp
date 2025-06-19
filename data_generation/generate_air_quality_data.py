@@ -4,6 +4,15 @@ import pandas as pd
 import numpy as np
 import uuid
 from datetime import datetime, timedelta
+import dropbox
+from dotenv import load_dotenv
+
+# -----------------
+# Load secrets from .env
+# -----------------
+
+load_dotenv()
+DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
 
 # -----------------
 # Configurable Parameters
@@ -187,3 +196,11 @@ ORDER BY Hour_Timestamp
 conn.close()
 print("✅ Done! Production data generated successfully.")
 
+if DROPBOX_ACCESS_TOKEN is None:
+    print("❌ Dropbox access token not found! Skipping upload.")
+else:
+    print("🔄 Uploading file to Dropbox...")
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+    with open(db_path, "rb") as f:
+        dbx.files_upload(f.read(), "/fha_data/dummy_air_quality.duckdb", mode=dropbox.files.WriteMode.overwrite)
+    print("✅ Dropbox upload complete!")
