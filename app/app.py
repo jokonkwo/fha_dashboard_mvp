@@ -6,29 +6,65 @@ import plotly.graph_objects as go
 from datetime import datetime
 import requests
 import os
+import dropbox
+from dotenv import load_dotenv
 
 # ---------------
-# Load Data
+# Load Secrets from .env
+# ---------------
+load_dotenv()
+DROPBOX_ACCESS_TOKEN = os.getenv("DROPBOX_ACCESS_TOKEN")
+DROPBOX_UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
+
+# ---------------
+# Load Data (Fresh Dropbox Download)
 # ---------------
 @st.cache_data
 def load_data():
-    dropbox_url = "https://www.dropbox.com/scl/fi/2wcl5m09a62yy1myvect7/dummy_air_quality.duckdb?rlkey=n1d4iohcx0qlt3z2pwm8l7osv&st=4nzlsvar&dl=1"
-
     local_path = "/tmp/dummy_air_quality.duckdb"
+    rev_path = "/tmp/dummy_air_quality.rev"
 
-    # Download from Dropbox if not already downloaded
-    if not os.path.exists(local_path):
-        st.info("Downloading database from Dropbox...")
-        response = requests.get(dropbox_url)
-        with open(local_path, "wb") as f:
-            f.write(response.content)
-        st.success("Download complete.")
+    st.info("Checking Dropbox for latest data...")
+
+    dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+
+    # Get remote file metadata
+    metadata = dbx.files_get_metadata(DROPBOX_UPLOAD_PATH)
+    remote_rev = metadata.rev
+
+    # Check if local file exists and has matching rev
+    if os.path.exists(local_path) and os.path.exists(rev_path):
+        with open(rev_path, "r") as f:
+            local_rev = f.read().strip()
+
+        if local_rev == remote_rev:
+            st.success("Local data is up-to-date.")
+            conn = duckdb.connect(local_path, read_only=True)
+            df_hourly = conn.execute("SELECT * FROM air_quality_hourly").fetchdf()
+            conn.close()
+            return df_hourly
+
+    # Download fresh copy if new revision detected
+    st.info("New version detected. Downloading updated data from Dropbox...")
+
+    with open(local_path, "wb") as f:
+        metadata, res = dbx.files_download(DROPBOX_UPLOAD_PATH)
+        f.write(res.content)
+
+    # Store new rev locally
+    with open(rev_path, "w") as f:
+        f.write(remote_rev)
+
+    st.success("Download complete.")
 
     conn = duckdb.connect(local_path, read_only=True)
     df_hourly = conn.execute("SELECT * FROM air_quality_hourly").fetchdf()
     conn.close()
     return df_hourly
 
+# ---------------
+# Load Data
+# ---------------
 df = load_data()
 df['Hour_Timestamp'] = pd.to_datetime(df['Hour_Timestamp'])
 zip_codes = sorted(df["Zip_Code"].unique())

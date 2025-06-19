@@ -196,11 +196,18 @@ ORDER BY Hour_Timestamp
 conn.close()
 print("✅ Done! Production data generated successfully.")
 
-if DROPBOX_ACCESS_TOKEN is None:
-    print("❌ Dropbox access token not found! Skipping upload.")
+# -----------------
+# Upload to Dropbox (Parameterized)
+# -----------------
+
+# Load destination path from .env
+DROPBOX_UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
+
+if DROPBOX_ACCESS_TOKEN is None or DROPBOX_UPLOAD_PATH is None:
+    print("❌ Dropbox access token or upload path not found! Skipping upload.")
 else:
-    print("🔄 Uploading file to Dropbox...")
+    print(f"🔄 Uploading file to Dropbox path: {DROPBOX_UPLOAD_PATH}")
     dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
     with open(db_path, "rb") as f:
-        dbx.files_upload(f.read(), "/fha_data/dummy_air_quality.duckdb", mode=dropbox.files.WriteMode.overwrite)
+        dbx.files_upload(f.read(), DROPBOX_UPLOAD_PATH, mode=dropbox.files.WriteMode.overwrite)
     print("✅ Dropbox upload complete!")
