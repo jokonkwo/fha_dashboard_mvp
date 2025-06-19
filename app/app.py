@@ -356,21 +356,67 @@ with tab2:
 # ---------------
 # Map Tab
 # ---------------
+# ------------------- Map Tab -------------------
 with tab3:
-    st.header("Sensor Locations")
+    st.header("Fresno County Air Quality Map")
 
     if filtered_df.empty:
         st.warning("No data available for selected filters.")
     else:
-        latest_locations = filtered_df.sort_values("Hour_Timestamp").groupby("Sensor_ID").tail(1)
+        # Load Fresno County GeoJSON
+        geojson_path = "path/to/Fresno_County_ZipCodes.geojson"  # <-- update this to actual location
+        geo_gdf = gpd.read_file(geojson_path)
 
-        fig_map = px.scatter_mapbox(
-            latest_locations, lat="Latitude", lon="Longitude", color="Avg_AQI",
-            size="Avg_PM2_5", hover_name="Zip_Code",
-            color_continuous_scale="RdYlGn_r", zoom=10, height=500
+        # Aggregate data per ZIP
+        zip_summary = filtered_df.groupby("Zip_Code").agg({
+            "Avg_AQI": "mean",
+            "Sensor_ID": "nunique"
+        }).reset_index().rename(columns={"Sensor_ID": "Num_Sensors"})
+
+        # Merge with GeoJSON shapes
+        geo_gdf = geo_gdf.merge(zip_summary, left_on="ZCTA5CE10", right_on="Zip_Code", how="left")
+
+        # Assign AQI color buckets
+        def aqi_color(aqi):
+            if pd.isna(aqi): return "#d3d3d3"  # light grey for missing zips
+            if aqi <= 50: return "#00e400"
+            elif aqi <= 100: return "#ffff00"
+            elif aqi <= 150: return "#ff7e00"
+            elif aqi <= 200: return "#ff0000"
+            elif aqi <= 300: return "#8f3f97"
+            else: return "#7e0023"
+
+        geo_gdf["Color"] = geo_gdf["Avg_AQI"].apply(aqi_color)
+
+        # Plot using Plotly choropleth
+        fig = px.choropleth_mapbox(
+            geo_gdf,
+            geojson=geo_gdf.geometry.__geo_interface__,
+            locations=geo_gdf.index,
+            color=geo_gdf["Color"],
+            hover_name="Zip_Code",
+            hover_data={
+                "Num_Sensors": True,
+                "Avg_AQI": ":.1f",
+                "Color": False
+            },
+            mapbox_style="carto-positron",
+            center={"lat": 36.74, "lon": -119.78},
+            zoom=9,
+            opacity=0.6
         )
-        fig_map.update_layout(mapbox_style="open-street-map")
-        st.plotly_chart(fig_map, use_container_width=True)
+
+        # Custom hovertemplate
+        fig.update_traces(
+            hovertemplate=(
+                "<b>Zip Code:</b> %{customdata[0]}<br>"
+                "<b>Num Sensors:</b> %{customdata[1]}<br>"
+                "<b>Avg AQI:</b> %{customdata[2]:.1f}<br>"
+                f"<b>Time Period:</b> {start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')}"
+            )
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 
 # ---------------
