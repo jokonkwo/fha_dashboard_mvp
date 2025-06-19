@@ -88,13 +88,19 @@ zip_codes = sorted(df["Zip_Code"].unique())
 st.markdown("""<h6 style='margin-bottom:5px;'>\U0001F50E <u>Global Filters</u></h6>""", unsafe_allow_html=True)
 
 # First row: ZIP Code Filter
-with st.container():
-    with st.expander("Filter ZIP Codes", expanded=False):
-        if "selected_zips" not in st.session_state:
-            st.session_state.selected_zips = zip_codes.copy()
-        selected_zips = st.multiselect("ZIP Codes:", zip_codes, default=st.session_state.selected_zips, key="zip_filter")
-        st.session_state.selected_zips = selected_zips
-    st.markdown(f"<small>Total ZIP Codes: {len(selected_zips)}</small>", unsafe_allow_html=True)
+with st.expander("Filter ZIP Codes", expanded=False):
+    if "selected_zips" not in st.session_state:
+        st.session_state.selected_zips = zip_codes.copy()
+
+    selected_zips = st.multiselect(
+        "ZIP Codes:", zip_codes,
+        default=st.session_state.selected_zips,
+        key="zip_filter"
+    )
+
+    if st.button("Reset ZIPs"):
+        selected_zips = zip_codes
+        st.session_state.selected_zips = zip_codes.copy()
 
 # Second row: Date Filter
 with st.container():
