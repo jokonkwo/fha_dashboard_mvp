@@ -85,58 +85,39 @@ df['Hour_Timestamp'] = pd.to_datetime(df['Hour_Timestamp'])
 zip_codes = sorted(df["Zip_Code"].unique())
 
 # ---------------
-# Global Sidebar Filters (Apply to all tabs)
+# Title and Global Filters (Apply to all tabs)
 # ---------------
-st.sidebar.header("🔎 Global Filters")
+st.title("🌫 FHA - Air Quality Dashboard")
+
+# ---- Global Filters Section ----
+st.subheader("🔎 Global Filters")
 
 # ---------------- ZIP Code Filter ----------------
-with st.sidebar.expander("Select ZIP Codes", expanded=True):
-    if "selected_zips" not in st.session_state:
-        st.session_state.selected_zips = zip_codes.copy()
-
-    selected_zips = st.multiselect(
-        "ZIP Codes:", zip_codes,
-        default=st.session_state.selected_zips,
-        key="zip_filter"
-    )
-
-    if st.button("Reset ZIPs"):
-        selected_zips = zip_codes
-        st.session_state.selected_zips = zip_codes.copy()
-
-st.sidebar.markdown(
-    f"<h5 style='color: grey;'>Total ZIP Codes: {len(selected_zips)}</h5>",
-    unsafe_allow_html=True
-)
+selected_zips = st.multiselect("Select ZIP Codes:", zip_codes, default=zip_codes)
+st.markdown(f"<h5 style='color: grey; margin-top: -10px;'>(Total ZIP Codes: {len(selected_zips)})</h5>", unsafe_allow_html=True)
 
 # ---------------- Cascading Date Filter ----------------
-with st.sidebar.expander("Select Date Period", expanded=True):
-    df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
-    year_month_pairs = [(p.year, p.month) for p in df_dates]
-    years = sorted(set(y for y, m in year_month_pairs))
-    months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
+# Extract year/month pairs
+df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
+year_month_pairs = [(p.year, p.month) for p in df_dates]
+years = sorted(set(y for y, m in year_month_pairs))
+months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
 
-    if "selected_year_start" not in st.session_state:
-        st.session_state.selected_year_start = years[0]
-        st.session_state.selected_year_end = years[-1]
-
-    col_start_year, col_start_month = st.columns([1, 1])
-    selected_year_start = col_start_year.selectbox("Start Year", years, index=years.index(st.session_state.selected_year_start))
+# Start selections
+col1, col2 = st.columns([1, 1])
+with col1:
+    selected_year_start = st.selectbox("Start Year", years)
     start_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year_start]]
-    selected_month_start = col_start_month.selectbox("Start Month", start_month_options, index=0)
+    selected_month_start = st.selectbox("Start Month", start_month_options)
 
-    col_end_year, col_end_month = st.columns([1, 1])
-    selected_year_end = col_end_year.selectbox("End Year", years, index=years.index(st.session_state.selected_year_end))
+with col2:
+    selected_year_end = st.selectbox("End Year", years, index=len(years)-1)
     end_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year_end]]
-    selected_month_end = col_end_month.selectbox("End Month", end_month_options, index=len(end_month_options)-1)
+    selected_month_end = st.selectbox("End Month", end_month_options, index=len(end_month_options)-1)
 
-    if st.button("Reset Period"):
-        selected_year_start = years[0]
-        selected_year_end = years[-1]
-
-    start_dt = datetime.strptime(f"{selected_month_start} {selected_year_start}", "%B %Y")
-    end_dt = datetime.strptime(f"{selected_month_end} {selected_year_end}", "%B %Y")
-    end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
+start_dt = datetime.strptime(f"{selected_month_start} {selected_year_start}", "%B %Y")
+end_dt = datetime.strptime(f"{selected_month_end} {selected_year_end}", "%B %Y")
+end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
 
 # ---------------- Apply Global Filters ----------------
 filtered_df = df[
@@ -146,10 +127,8 @@ filtered_df = df[
 ]
 
 # ---------------
-# Main Layout with Tabs
+# Main Tabs
 # ---------------
-st.title("🌫 FHA - Air Quality Dashboard")
-
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Trends", "🗺 Map", "ℹ️ About"])
 
 # ---------------------------
