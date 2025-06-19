@@ -8,4 +8,5 @@ dropbox==11.36.2
 python-dotenv
 setuptools
 geopandas
+json
 
