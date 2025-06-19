@@ -35,7 +35,7 @@ def create_dropbox_client():
 
 
 # ---------------
-# Load Data (Fresh Dropbox Download)
+# Load AQ Data (Fresh Dropbox Download)
 # ---------------
 @st.cache_data
 def load_data():
@@ -79,12 +79,49 @@ def load_data():
     conn.close()
     return df_hourly
 
+# -------------------------------
+# Download GeoJSON from Dropbox
+# -------------------------------
+@st.cache_data
+def load_geojson():
+    geo_local_path = "/tmp/fresno_zips.geojson"
+    geo_rev_path = "/tmp/fresno_zips_geo.rev"
+
+    dbx = create_dropbox_client()
+
+    metadata = dbx.files_get_metadata(DROPBOX_GEOJSON_PATH)
+    remote_rev = metadata.rev
+
+    if os.path.exists(geo_local_path) and os.path.exists(geo_rev_path):
+        with open(geo_rev_path, "r") as f:
+            local_rev = f.read().strip()
+        if local_rev == remote_rev:
+            st.success("GeoJSON data is up-to-date.")
+            geo_gdf = gpd.read_file(geo_local_path)
+            return geo_gdf
+
+    st.info("New GeoJSON version detected. Downloading...")
+    with open(geo_local_path, "wb") as f:
+        metadata, res = dbx.files_download(DROPBOX_GEOJSON_PATH)
+        f.write(res.content)
+
+    with open(geo_rev_path, "w") as f:
+        f.write(remote_rev)
+
+    geo_gdf = gpd.read_file(geo_local_path)
+    return geo_gdf
+
 # ---------------
 # Load Data
 # ---------------
+
+# Load AQ Data
 df = load_data()
 df['Hour_Timestamp'] = pd.to_datetime(df['Hour_Timestamp'])
 zip_codes = sorted(df["Zip_Code"].unique())
+
+# Load GeoJSON
+geo_gdf = load_geojson()
 
 # ---------------- Title ----------------
 st.title("🌫 FHA - Air Quality Dashboard")
