@@ -249,27 +249,47 @@ with tab2:
     if filtered_df.empty:
         st.warning("No data available for selected filters.")
     else:
-        # Aggregate to daily average AQI per ZIP code
-        filtered_df["Date"] = filtered_df["Hour_Timestamp"].dt.date
-        daily_avg = filtered_df.groupby(["Date", "Zip_Code"])["Avg_AQI"].mean().reset_index()
+        st.subheader("📅 Monthly Trends")
 
-        # Line Chart
-        st.subheader("📈 Daily Average AQI Trends")
+        # Extract year/month pairs for dropdown
+        df_dates = filtered_df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
+        year_month_pairs = [(p.year, p.month) for p in df_dates]
+        years = sorted(set(y for y, m in year_month_pairs))
+        months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
 
-        fig = px.line(
-            daily_avg, x="Date", y="Avg_AQI", color="Zip_Code",
-            labels={"Date": "Date", "Avg_AQI": "Average AQI", "Zip_Code": "ZIP Code"},
-            title="Daily Air Quality Trends by ZIP Code"
-        )
-        fig.update_traces(mode="lines+markers")
-        fig.update_layout(xaxis_title="Date", yaxis_title="Average AQI", hovermode="x unified")
-        st.plotly_chart(fig, use_container_width=True)
+        # Month selection
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            selected_year = st.selectbox("Select Year", years, key="trends_year")
+        with col2:
+            month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year]]
+            selected_month = st.selectbox("Select Month", month_options, key="trends_month")
 
-        # Add user-friendly context
-        st.markdown(
-            "<p style='font-size:0.9em; color:grey;'><b>What this shows:</b> Daily average air quality for each selected ZIP code, making it easier to see high-level changes, seasonal effects, and persistent patterns over time.</p>",
-            unsafe_allow_html=True
-        )
+        # Filter for selected month
+        month_num = datetime.strptime(selected_month, "%B").month
+        start_month_dt = datetime(selected_year, month_num, 1)
+        end_month_dt = start_month_dt + pd.offsets.MonthEnd(0)
+
+        trends_df = filtered_df[
+            (filtered_df["Hour_Timestamp"].dt.date >= start_month_dt.date()) &
+            (filtered_df["Hour_Timestamp"].dt.date <= end_month_dt.date())
+        ]
+
+        if trends_df.empty:
+            st.warning("No data available for this month.")
+        else:
+            # Aggregate to daily averages
+            trends_df["Date"] = trends_df["Hour_Timestamp"].dt.date
+            daily_trends = trends_df.groupby(["Date", "Zip_Code"])["Avg_AQI"].mean().reset_index()
+
+            fig = px.line(
+                daily_trends, 
+                x="Date", y="Avg_AQI", color="Zip_Code",
+                title=f"Daily AQI - {selected_month} {selected_year}",
+                markers=True
+            )
+            fig.update_layout(yaxis_title="AQI", xaxis_title="Date")
+            st.plotly_chart(fig, use_container_width=True)
 
 # ---------------
 # Map Tab
