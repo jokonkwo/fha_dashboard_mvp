@@ -424,7 +424,7 @@ with tab3:
         }).reset_index().rename(columns={"Sensor_ID": "Num_Sensors"})
 
         # Merge with GeoJSON shapes
-        geo_gdf = geo_gdf.merge(zip_summary, left_on="ZCTA5CE10", right_on="Zip_Code", how="left")
+        geo_gdf = geo_gdf.merge(zip_summary, left_on="Zip_Code", right_on="Zip_Code", how="left")
 
         # Assign AQI color buckets
         def aqi_color(aqi):
