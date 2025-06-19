@@ -249,9 +249,9 @@ with tab2:
     if filtered_df.empty:
         st.warning("No data available for selected filters.")
     else:
-        st.subheader("📅 Monthly Trends")
+        st.subheader("📅 Monthly Trends (Average Across ZIPs)")
 
-        # Extract year/month pairs for dropdown
+        # Extract year/month pairs
         df_dates = filtered_df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
         year_month_pairs = [(p.year, p.month) for p in df_dates]
         years = sorted(set(y for y, m in year_month_pairs))
@@ -265,27 +265,27 @@ with tab2:
             month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[selected_year]]
             selected_month = st.selectbox("Select Month", month_options, key="trends_month")
 
-        # Filter for selected month
+        # Filter to selected month
         month_num = datetime.strptime(selected_month, "%B").month
         start_month_dt = datetime(selected_year, month_num, 1)
         end_month_dt = start_month_dt + pd.offsets.MonthEnd(0)
 
-        trends_df = filtered_df[
+        month_df = filtered_df[
             (filtered_df["Hour_Timestamp"].dt.date >= start_month_dt.date()) &
             (filtered_df["Hour_Timestamp"].dt.date <= end_month_dt.date())
         ]
 
-        if trends_df.empty:
+        if month_df.empty:
             st.warning("No data available for this month.")
         else:
-            # Aggregate to daily averages
-            trends_df["Date"] = trends_df["Hour_Timestamp"].dt.date
-            daily_trends = trends_df.groupby(["Date", "Zip_Code"])["Avg_AQI"].mean().reset_index()
+            # Daily average across all ZIP codes
+            month_df["Date"] = month_df["Hour_Timestamp"].dt.date
+            daily_avg = month_df.groupby("Date")["Avg_AQI"].mean().reset_index()
 
             fig = px.line(
-                daily_trends, 
-                x="Date", y="Avg_AQI", color="Zip_Code",
-                title=f"Daily AQI - {selected_month} {selected_year}",
+                daily_avg, 
+                x="Date", y="Avg_AQI",
+                title=f"Daily Average AQI - {selected_month} {selected_year}",
                 markers=True
             )
             fig.update_layout(yaxis_title="AQI", xaxis_title="Date")
