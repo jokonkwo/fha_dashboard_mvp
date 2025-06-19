@@ -86,34 +86,42 @@ def load_data():
 # -------------------------------
 @st.cache_data
 def load_geojson():
-    local_path = "/tmp/fresno_zipcodes.geojson"
-    rev_path = "/tmp/fresno_zipcodes.rev"
-
-    st.info("Checking Dropbox for latest geojson...")
-
+    st.info("Checking Dropbox for GeoJSON...")
+    
     dbx = create_dropbox_client()
+
+    local_path = "/tmp/Fresno_County_ZipCodes.geojson"
+    rev_path = "/tmp/Fresno_County_ZipCodes.rev"
 
     metadata = dbx.files_get_metadata(DROPBOX_GEOJSON_PATH)
     remote_rev = metadata.rev
 
+    # Check if file already downloaded and revision matches
     if os.path.exists(local_path) and os.path.exists(rev_path):
         with open(rev_path, "r") as f:
             local_rev = f.read().strip()
         if local_rev == remote_rev:
             st.success("GeoJSON is up-to-date.")
-            return gpd.read_file(local_path)
+            geo_gdf = gpd.read_file(local_path)
+            return geo_gdf
 
-    st.info("New version detected. Downloading updated GeoJSON from Dropbox...")
+    # Download fresh copy if new revision detected
+    st.info("Downloading updated GeoJSON from Dropbox...")
 
-    with open(local_path, "wb") as f:
-        metadata, res = dbx.files_download(DROPBOX_GEOJSON_PATH)
-        f.write(res.content)
+    metadata, res = dbx.files_download(DROPBOX_GEOJSON_PATH)
+    
+    # Decode Dropbox response content properly
+    geojson_data = res.content.decode("utf-8")
+
+    with open(local_path, "w") as f:
+        f.write(geojson_data)
 
     with open(rev_path, "w") as f:
         f.write(remote_rev)
 
     st.success("GeoJSON download complete.")
-    return gpd.read_file(local_path)
+    geo_gdf = gpd.read_file(local_path)
+    return geo_gdf
 
 # ---------------
 # Load Data
