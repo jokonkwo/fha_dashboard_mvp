@@ -102,23 +102,24 @@ with st.expander("Filter ZIP Codes", expanded=False):
         selected_zips = zip_codes
         st.session_state.selected_zips = zip_codes.copy()
 
-# Second row: Date Filter
-with st.container():
-    st.markdown("<small>Date Range:</small>", unsafe_allow_html=True)
-    df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
-    year_month_pairs = [(p.year, p.month) for p in df_dates]
-    years = sorted(set(y for y, m in year_month_pairs))
-    months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
+# Second row: Date Filter (All 4 dropdowns in one row)
+df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
+year_month_pairs = [(p.year, p.month) for p in df_dates]
+years = sorted(set(y for y, m in year_month_pairs))
+months_lookup = {year: sorted(m for y, m in year_month_pairs if y == year) for year in years}
 
-    col1, col2 = st.columns(2)
-    with col1:
-        year_start = st.selectbox("Start Year", years, key="start_year")
-        start_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[year_start]]
-        month_start = st.selectbox("Start Month", start_month_options, key="start_month")
-    with col2:
-        year_end = st.selectbox("End Year", years, index=len(years)-1, key="end_year")
-        end_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[year_end]]
-        month_end = st.selectbox("End Month", end_month_options, index=len(end_month_options)-1, key="end_month")
+col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+
+with col1:
+    year_start = st.selectbox("Start Year", years, key="start_year")
+with col2:
+    start_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[year_start]]
+    month_start = st.selectbox("Start Month", start_month_options, key="start_month")
+with col3:
+    year_end = st.selectbox("End Year", years, index=len(years)-1, key="end_year")
+with col4:
+    end_month_options = [datetime(1900, m, 1).strftime('%B') for m in months_lookup[year_end]]
+    month_end = st.selectbox("End Month", end_month_options, index=len(end_month_options)-1, key="end_month")
 
 start_dt = datetime.strptime(f"{month_start} {year_start}", "%B %Y")
 end_dt = datetime.strptime(f"{month_end} {year_end}", "%B %Y")
