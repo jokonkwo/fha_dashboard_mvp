@@ -306,16 +306,16 @@ with tab2:
 
                 st.markdown("---")
                 st.markdown("""
-                    f"<p style='font-size:0.95em;'>"       
-                    f"<b>Summary for {month_display}</b><br>"
+                    <p style='font-size:0.95em;'>       
+                    <b>Summary for {month_display}</b><br>
                     
-                    f"<b>Applied ZIP Codes<b>:
-                    [{zip_list}] <b>({num_zips} total)<b><br>"
-                    f"<b>Highest AQI:</b> {max_row['Avg_AQI']:.1f} ({max_row['Date'].strftime('%m/%d/%Y')})<br>"
-                    f"<b>Lowest AQI:</b> {min_row['Avg_AQI']:.1f}  ({min_row['Date'].strftime('%m/%d/%Y')})"
-                    f"</p>", 
+                    <b>Applied ZIP Codes<b>:
+                    [{zip_list}] <b>({num_zips} total)<b><br>
+                    <b>Highest AQI:</b> {max_row['Avg_AQI']:.1f} ({max_row['Date'].strftime('%m/%d/%Y')})<br>
+                    <b>Lowest AQI:</b> {min_row['Avg_AQI']:.1f}  ({min_row['Date'].strftime('%m/%d/%Y')})
+                    </p>
+                    """, 
                     unsafe_allow_html=True
-                    """
                 )
 
 # ---------------
