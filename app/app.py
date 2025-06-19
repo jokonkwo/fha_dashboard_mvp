@@ -87,15 +87,17 @@ zip_codes = sorted(df["Zip_Code"].unique())
 # ---------------- Global Filters ABOVE TITLE ----------------
 st.markdown("""<h6 style='margin-bottom:5px;'>\U0001F50E <u>Global Filters</u></h6>""", unsafe_allow_html=True)
 
-filter_col1, filter_col2 = st.columns(2)
-
-with filter_col1:
-    st.markdown("<small>ZIP Codes:</small>", unsafe_allow_html=True)
-    selected_zips = st.multiselect("", zip_codes, default=zip_codes, key="zip_filter")
+# First row: ZIP Code Filter
+with st.container():
+    with st.expander("Filter ZIP Codes", expanded=False):
+        if "selected_zips" not in st.session_state:
+            st.session_state.selected_zips = zip_codes.copy()
+        selected_zips = st.multiselect("ZIP Codes:", zip_codes, default=st.session_state.selected_zips, key="zip_filter")
+        st.session_state.selected_zips = selected_zips
     st.markdown(f"<small>Total ZIP Codes: {len(selected_zips)}</small>", unsafe_allow_html=True)
 
-with filter_col2:
-    # Date filters
+# Second row: Date Filter
+with st.container():
     st.markdown("<small>Date Range:</small>", unsafe_allow_html=True)
     df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
     year_month_pairs = [(p.year, p.month) for p in df_dates]
