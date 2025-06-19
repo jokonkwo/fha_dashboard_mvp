@@ -249,20 +249,27 @@ with tab2:
     if filtered_df.empty:
         st.warning("No data available for selected filters.")
     else:
-        st.subheader("AQI Over Time")
-        fig = px.line(filtered_df, x="Hour_Timestamp", y="Avg_AQI", color="Zip_Code",
-                      title="Hourly AQI Trends")
+        # Aggregate to daily average AQI per ZIP code
+        filtered_df["Date"] = filtered_df["Hour_Timestamp"].dt.date
+        daily_avg = filtered_df.groupby(["Date", "Zip_Code"])["Avg_AQI"].mean().reset_index()
+
+        # Line Chart
+        st.subheader("📈 Daily Average AQI Trends")
+
+        fig = px.line(
+            daily_avg, x="Date", y="Avg_AQI", color="Zip_Code",
+            labels={"Date": "Date", "Avg_AQI": "Average AQI", "Zip_Code": "ZIP Code"},
+            title="Daily Air Quality Trends by ZIP Code"
+        )
+        fig.update_traces(mode="lines+markers")
+        fig.update_layout(xaxis_title="Date", yaxis_title="Average AQI", hovermode="x unified")
         st.plotly_chart(fig, use_container_width=True)
 
-        st.subheader("Time-of-Day Heatmap")
-        filtered_df["Hour"] = filtered_df["Hour_Timestamp"].dt.hour
-        heatmap_data = filtered_df.groupby(["Hour", "Zip_Code"]).Avg_AQI.mean().reset_index()
-
-        fig_heatmap = px.density_heatmap(
-            heatmap_data, x="Hour", y="Zip_Code", z="Avg_AQI",
-            color_continuous_scale="RdYlGn_r", title="Hourly AQI Patterns by ZIP"
+        # Add user-friendly context
+        st.markdown(
+            "<p style='font-size:0.9em; color:grey;'><b>What this shows:</b> Daily average air quality for each selected ZIP code, making it easier to see high-level changes, seasonal effects, and persistent patterns over time.</p>",
+            unsafe_allow_html=True
         )
-        st.plotly_chart(fig_heatmap, use_container_width=True)
 
 # ---------------
 # Map Tab
