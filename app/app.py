@@ -129,7 +129,7 @@ start_dt = datetime.strptime(f"{month_start} {year_start}", "%B %Y")
 end_dt = datetime.strptime(f"{month_end} {year_end}", "%B %Y")
 end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
 st.markdown(
-    f"<p style='font-size:0.8em; color: grey;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</p>", 
+    f"<p style='font-size:0.8em; color: grey;'>(Time Period: {start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</p>", 
     unsafe_allow_html=True
 )
 
@@ -186,7 +186,7 @@ with tab1:
 # ---------- Chart Summary -----------
             st.markdown(
                 """
-                <p style='font-size:0.95em; color:grey;'>
+                <p style='margin-top:15px;'font-size:0.95em; color:grey;'>
                 <b>Quick snapshot:</b> See how overall air quality performed — including average AQI, which ZIP codes had the best and worst averages, and how often air quality was considered good or unhealthy for your selected time period.
                 </p>
                 """,
@@ -324,7 +324,8 @@ with tab2:
                     f"""
                     <p style='font-size:0.9em; color:grey;'>
                         <b>Summary for {month_display}</b><br>
-                        Applied ZIP Codes: [{zip_list}] ({num_zips} total)<br>
+                        </b>Applied ZIP Codes:</b><br>
+                        [{zip_list}] </b>({num_zips} total)</b><br>
                         <b>Highest AQI:</b> {max_row['Avg_AQI']:.1f} ({max_row['Date'].strftime('%m/%d/%Y')})<br>
                         <b>Lowest AQI:</b> {min_row['Avg_AQI']:.1f} ({min_row['Date'].strftime('%m/%d/%Y')})
                     </p>
