@@ -84,6 +84,12 @@ with tab1:
         if st.button("Reset ZIPs"):
             selected_zips = zip_codes
             st.session_state.selected_zips = zip_codes.copy()
+    
+# After ZIP Code multiselect
+    st.markdown(
+        f"<h5 style='color: grey; margin-top: -15px;'>(Total ZIP Codes: {len(selected_zips)})</h5>",
+        unsafe_allow_html=True
+    )
 
     # ---------------- Cascading Date Filter ----------------
     with st.expander("Filter Date Period", expanded=False):
