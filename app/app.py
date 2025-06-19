@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 # Load Secrets from .env
 # ---------------
 load_dotenv()
-APP_KEY = os.getenv("DROPBOX_APP_KEY")
-APP_SECRET = os.getenv("DROPBOX_APP_SECRET")
-REFRESH_TOKEN = os.getenv("DROPBOX_REFRESH_TOKEN")
-UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
+DROPBOX_APP_KEY = os.getenv("DROPBOX_APP_KEY")
+DROPBOX_APP_SECRET = os.getenv("DROPBOX_APP_SECRET")
+DROPBOX_REFRESH_TOKEN = os.getenv("DROPBOX_REFRESH_TOKEN")
+DROPBOX_UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
 
 # ---------------
 # Dropbox Connection with Refresh Token
