@@ -4,5 +4,5 @@ pandas
 plotly
 streamlit-folium
 requests
-dropbox
+dropbox==11.36.2
 python-dotenv
