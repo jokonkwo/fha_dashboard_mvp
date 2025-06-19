@@ -88,7 +88,7 @@ zip_codes = sorted(df["Zip_Code"].unique())
 st.title("🌫 FHA - Air Quality Dashboard")
 
 # ------------ Global Filters -----------
-st.markdown("""<h6 style='margin-bottom:5px;'>\U0001F50E <u>Global Filters</u></h6>""", unsafe_allow_html=True)
+st.markdown("""<h6 style='margin-bottom:5px;'>\U0001F50E <u>Filters</u></h6>""", unsafe_allow_html=True)
 
 # First row: ZIP Code Filter
 with st.expander("Filter ZIP Codes", expanded=False):
@@ -233,8 +233,13 @@ with tab1:
             )
             fig.update_traces(sort=False)  # <-- Fully locks legend + slices
             st.plotly_chart(fig, use_container_width=True)
-            st.markdown("<p style='font-size:0.9em; color:grey;'>**How often air was clean or polluted:** This chart shows what percentage of all hourly air quality readings landed in each health category across your selected ZIP codes and dates.</p>", unsafe_allow_html=True)
-
+            st.markdown("""
+            <p style='font-size:0.9em; color:grey;'>
+            <b>How often air was clean or polluted:</b><br>
+            This chart shows what percentage of all hourly air quality readings landed in each health category across your selected ZIP codes and dates.
+            </p>
+            """, unsafe_allow_html=True)
+            
 # ---------------
 # Trends Tab
 # ---------------
