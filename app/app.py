@@ -415,8 +415,7 @@ with tab3:
         st.warning("No data available for selected filters.")
     else:
         # Load Fresno County GeoJSON
-        geojson_path = "path/to/Fresno_County_ZipCodes.geojson"  # <-- update this
-        geo_gdf = gpd.read_file(geojson_path)
+        geo_gdf = load_geojson()
 
         # Aggregate data per ZIP
         zip_summary = filtered_df.groupby("Zip_Code").agg({
