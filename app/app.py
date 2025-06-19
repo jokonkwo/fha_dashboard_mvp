@@ -128,7 +128,10 @@ with col4:
 start_dt = datetime.strptime(f"{month_start} {year_start}", "%B %Y")
 end_dt = datetime.strptime(f"{month_end} {year_end}", "%B %Y")
 end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
-st.markdown(f"<h5 style='color: grey; margin-top: -8px;'font-size:0.6em;'>Time Period: ({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>", unsafe_allow_html=True)
+st.markdown(
+    f"<p style='font-size:0.8em; color: grey;'>({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</p>", 
+    unsafe_allow_html=True
+)
 
 filtered_df = df[(df["Zip_Code"].isin(selected_zips)) & (df["Hour_Timestamp"] >= start_dt) & (df["Hour_Timestamp"] <= end_dt)]
 
@@ -180,6 +183,16 @@ with tab1:
             col5.metric("🚩 Unhealthy Days (≥101 AQI)", f"{unhealthy_days} ({pct_unhealthy_days}%)")
             col6.metric("📊 Total Readings (Hourly)", total_observations)
 
+# ---------- Chart Summary -----------
+            st.markdown(
+                """
+                <p style='font-size:0.95em; color:grey;'>
+                <b>Quick snapshot:</b> See how overall air quality performed — including average AQI, which ZIP codes had the best and worst averages, and how often air quality was considered good or unhealthy for your selected time period.
+                </p>
+                """,
+                unsafe_allow_html=True
+            )
+
 
     # -------- AQI Category Distribution --------
     with subtab2:
@@ -229,6 +242,8 @@ with tab1:
             )
             fig.update_traces(sort=False)  # <-- Fully locks legend + slices
             st.plotly_chart(fig, use_container_width=True)
+            
+# ---------- Chart Summary -----------
             st.markdown("""
             <p style='font-size:0.9em; color:grey;'>
             <b>How often air was clean or polluted:</b><br>
@@ -305,16 +320,15 @@ with tab2:
                 min_row = daily_avg.loc[daily_avg['Avg_AQI'].idxmin()]
 
                 st.markdown("---")
-                st.markdown("""
-                    <p style='font-size:0.95em;'>       
-                    <b>Summary for {month_display}</b><br>
-                    
-                    <b>Applied ZIP Codes<b>:
-                    [{zip_list}] <b>({num_zips} total)<b><br>
-                    <b>Highest AQI:</b> {max_row['Avg_AQI']:.1f} ({max_row['Date'].strftime('%m/%d/%Y')})<br>
-                    <b>Lowest AQI:</b> {min_row['Avg_AQI']:.1f}  ({min_row['Date'].strftime('%m/%d/%Y')})
+                st.markdown(
+                    f"""
+                    <p style='font-size:0.9em; color:grey;'>
+                        <b>Summary for {month_display}</b><br>
+                        Applied ZIP Codes: [{zip_list}] ({num_zips} total)<br>
+                        <b>Highest AQI:</b> {max_row['Avg_AQI']:.1f} ({max_row['Date'].strftime('%m/%d/%Y')})<br>
+                        <b>Lowest AQI:</b> {min_row['Avg_AQI']:.1f} ({min_row['Date'].strftime('%m/%d/%Y')})
                     </p>
-                    """, 
+                    """,
                     unsafe_allow_html=True
                 )
 
