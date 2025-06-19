@@ -8,7 +8,7 @@ import requests
 import os
 import dropbox
 from dotenv import load_dotenv
-from dropbox.oauth import OAuth2RefreshToken
+
 
 # ---------------
 # Load Secrets from .env
@@ -24,13 +24,13 @@ UPLOAD_PATH = os.getenv("DROPBOX_UPLOAD_PATH")
 # ---------------
 
 def create_dropbox_client():
-    oauth2_refresh_token = dropbox.oauth.OAuth2RefreshToken(
+    dbx = dropbox.Dropbox(
+        oauth2_refresh_token=DROPBOX_REFRESH_TOKEN,
         app_key=DROPBOX_APP_KEY,
-        app_secret=DROPBOX_APP_SECRET,
-        refresh_token=DROPBOX_REFRESH_TOKEN
+        app_secret=DROPBOX_APP_SECRET
     )
-    dbx = dropbox.Dropbox(oauth2_refresh_token)
     return dbx
+
 
 # ---------------
 # Load Data (Fresh Dropbox Download)
