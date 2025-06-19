@@ -31,10 +31,11 @@ monthly_temp_ranges = {
     9: (70, 100), 10: (60, 90), 11: (50, 70), 12: (40, 60),
 }
 
+# ✅ UPDATED SEASONALLY-WEIGHTED PM2.5 RANGES:
 monthly_pm25_ranges = {
-    1: (5, 25), 2: (5, 25), 3: (5, 25), 4: (8, 30),
-    5: (10, 35), 6: (15, 40), 7: (20, 120), 8: (25, 120),
-    9: (20, 100), 10: (15, 60), 11: (10, 30), 12: (8, 25),
+    1: (3, 18),  2: (3, 18),  3: (5, 22),  4: (8, 30),
+    5: (10, 40), 6: (15, 55), 7: (20, 100), 8: (25, 120),
+    9: (20, 90), 10: (15, 60), 11: (10, 30), 12: (5, 20),
 }
 
 # -----------------
@@ -133,6 +134,7 @@ for sensor in sensor_metadata:
         ) for m in months
     ])
 
+    # ✅ UPDATED PM2.5 generation logic (seasonal weighting)
     pm25_array = np.array([
         np.random.triangular(
             monthly_pm25_ranges[m][0],
@@ -184,3 +186,4 @@ ORDER BY Hour_Timestamp
 
 conn.close()
 print("✅ Done! Production data generated successfully.")
+
