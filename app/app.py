@@ -439,13 +439,13 @@ with tab3:
         geo_gdf["Color"] = geo_gdf["Avg_AQI"].apply(aqi_color)
 
         # Prepare the GeoJSON interface
-        geojson_interface = geo_gdf.set_index("ZCTA5CE10").geometry.__geo_interface__
+        geojson_interface = geo_gdf.set_index("Zip_Code").geometry.__geo_interface__
 
         # Build plot
         fig = px.choropleth_mapbox(
             geo_gdf,
             geojson=geojson_interface,
-            locations="ZCTA5CE10",
+            locations="Zip_Code",
             color="Avg_AQI",
             color_continuous_scale=[
                 "#00e400", "#ffff00", "#ff7e00", "#ff0000", "#8f3f97", "#7e0023"
