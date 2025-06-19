@@ -104,6 +104,11 @@ with st.expander("Filter ZIP Codes", expanded=False):
     if st.button("Reset ZIPs"):
         selected_zips = zip_codes
         st.session_state.selected_zips = zip_codes.copy()
+# After ZIP Code multiselect
+st.markdown(
+    f"<h5 style='color: grey; margin-top: -15px;'>(Total ZIP Codes: {len(selected_zips)})</h5>",
+    unsafe_allow_html=True
+)
 
 # Second row: Date Filter (All 4 dropdowns in one row)
 df_dates = df["Hour_Timestamp"].dt.to_period("M").drop_duplicates().sort_values()
@@ -228,6 +233,7 @@ with tab1:
             )
             fig.update_traces(sort=False)  # <-- Fully locks legend + slices
             st.plotly_chart(fig, use_container_width=True)
+            st.markdown("<p style='font-size:0.9em; color:grey;'>**How often air was clean or polluted:** This chart shows what percentage of all hourly air quality readings landed in each health category across your selected ZIP codes and dates.</p>", unsafe_allow_html=True)
 
 # ---------------
 # Trends Tab
