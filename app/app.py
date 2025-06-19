@@ -216,7 +216,7 @@ with tab1:
             col4, col5, col6 = st.columns(3)
             col4.metric("✅ Good Days (≤50 AQI)", f"{good_days} ({pct_good_days}%)")
             col5.metric("🚩 Unhealthy Days (≥101 AQI)", f"{unhealthy_days} ({pct_unhealthy_days}%)")
-            col6.metric("📊 Total Readings", total_observations)
+            col6.metric("📊 Total Readings (Hourly)", total_observations)
 
 
     # -------- AQI Category Distribution --------
