@@ -93,7 +93,9 @@ st.title("🌫 FHA - Air Quality Dashboard")
 st.subheader("🔎 Global Filters")
 
 # ---------------- ZIP Code Filter ----------------
-selected_zips = st.multiselect("Select ZIP Codes:", zip_codes, default=zip_codes)
+with st.sidebar.expander("Select ZIP Codes", expanded=True):
+    zip_checks = {z: st.checkbox(z, value=True) for z in zip_codes}
+    selected_zips = [z for z, checked in zip_checks.items() if checked]
 st.markdown(f"<h5 style='color: grey; margin-top: -10px;'>(Total ZIP Codes: {len(selected_zips)})</h5>", unsafe_allow_html=True)
 
 # ---------------- Cascading Date Filter ----------------
