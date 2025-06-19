@@ -1,3 +1,6 @@
+import os
+import dropbox
+from dotenv import load_dotenv
 import streamlit as st
 import duckdb
 import pandas as pd
@@ -5,9 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import requests
-import os
-import dropbox
-from dotenv import load_dotenv
+import geopandas as gpd
+
 
 
 # ---------------
