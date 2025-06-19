@@ -150,6 +150,7 @@ with tab1:
         if filtered_df.empty:
             st.warning("No data available for selected filters.")
         else:
+            # ---------------- Existing metrics ----------------
             latest = filtered_df.sort_values("Hour_Timestamp").groupby("Zip_Code").tail(1)
             avg_aqi = round(filtered_df["Avg_AQI"].mean(), 1)
             
@@ -157,11 +158,30 @@ with tab1:
             worst_zip = latest.loc[latest["Avg_AQI"].idxmax()]
 
             col1, col2, col3 = st.columns(3)
-            col1.metric("🌡 Avg AQI", avg_aqi, help="Overall average AQI for selected ZIP codes and period.")
-            col2.metric("✅ Best ZIP", f"{best_zip['Zip_Code']} ({round(best_zip['Avg_AQI'],1)})",
-                        help="ZIP code with lowest AQI in latest readings.")
-            col3.metric("🔥 Worst ZIP", f"{worst_zip['Zip_Code']} ({round(worst_zip['Avg_AQI'],1)})",
-                        help="ZIP code with highest AQI in latest readings.")
+            col1.metric("🌡 Avg AQI", avg_aqi)
+            col2.metric("✅ Best ZIP", f"{best_zip['Zip_Code']} ({round(best_zip['Avg_AQI'],1)})")
+            col3.metric("🔥 Worst ZIP", f"{worst_zip['Zip_Code']} ({round(worst_zip['Avg_AQI'],1)})")
+
+            # ---------------- New Enhanced Metrics ----------------
+
+            # Convert to daily summaries (truncate timestamp to date)
+            filtered_df["Date"] = filtered_df["Hour_Timestamp"].dt.date
+            daily_aqi = filtered_df.groupby("Date")["Avg_AQI"].mean().reset_index()
+
+            total_days = daily_aqi.shape[0]
+            good_days = daily_aqi[daily_aqi["Avg_AQI"] <= 50].shape[0]
+            unhealthy_days = daily_aqi[daily_aqi["Avg_AQI"] >= 101].shape[0]
+
+            pct_good_days = round((good_days / total_days) * 100, 1) if total_days > 0 else 0
+
+            total_observations = filtered_df.shape[0]
+
+            st.divider()
+
+            col4, col5, col6 = st.columns(3)
+            col4.metric("✅ % Good Days (≤50 AQI)", f"{pct_good_days}%")
+            col5.metric("🚩 Unhealthy Days (≥101 AQI)", unhealthy_days)
+            col6.metric("📊 Total Readings", total_observations)
 
     # -------- AQI Category Distribution --------
     with subtab2:
