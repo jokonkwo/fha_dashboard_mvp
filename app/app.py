@@ -106,7 +106,7 @@ with st.expander("Filter ZIP Codes", expanded=False):
         st.session_state.selected_zips = zip_codes.copy()
 # After ZIP Code multiselect
 st.markdown(
-    f"<h5 style='color: grey; margin-top: -15px;'>(Total ZIP Codes: {len(selected_zips)})</h5>",
+    f"<h5 style='color: grey; margin-top: -8px;'>(Total ZIP Codes: {len(selected_zips)})</h5>",
     unsafe_allow_html=True
 )
 
@@ -132,7 +132,7 @@ with col4:
 start_dt = datetime.strptime(f"{month_start} {year_start}", "%B %Y")
 end_dt = datetime.strptime(f"{month_end} {year_end}", "%B %Y")
 end_dt = end_dt.replace(day=1) + pd.offsets.MonthEnd(1)
-st.markdown(f"<h5 style='color: grey;'>Time Period: ({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>", unsafe_allow_html=True)
+st.markdown(f"<h5 style='color: grey; margin-top: -8px;'>Time Period: ({start_dt.strftime('%b %Y')} - {end_dt.strftime('%b %Y')})</h5>", unsafe_allow_html=True)
 
 filtered_df = df[(df["Zip_Code"].isin(selected_zips)) & (df["Hour_Timestamp"] >= start_dt) & (df["Hour_Timestamp"] <= end_dt)]
 
