@@ -1,2 +1,7 @@
 data/*.duckdb
 data/*.duckdb
+.env
+# Ignore mac system files
+.DS_Store
+# Ignore virtual environments
+venv/
