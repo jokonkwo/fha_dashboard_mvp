@@ -5,3 +5,13 @@ data/*.duckdb
 .DS_Store
 # Ignore virtual environments
 venv/
+
+# Local env & generated data
+.venv/
+__pycache__/
+*.pyc
+data/processed/
+
+# Legacy streamlit artifacts
+legacy/streamlit/.venv/
+legacy/streamlit/__pycache__/

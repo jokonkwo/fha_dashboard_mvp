@@ -1,0 +1,10 @@
+streamlit
+duckdb
+pandas
+plotly
+streamlit-folium
+requests
+dropbox==11.36.2
+python-dotenv
+setuptools
+geopandas
