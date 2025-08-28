@@ -15,3 +15,10 @@ data/processed/
 # Legacy streamlit artifacts
 legacy/streamlit/.venv/
 legacy/streamlit/__pycache__/
+
+# Web artifacts
+web/node_modules/
+web/.next/
+web/.turbo/
+web/out/
+web/.env*
