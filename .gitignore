@@ -11,3 +11,7 @@ venv/
 __pycache__/
 *.pyc
 data/processed/
+
+# Legacy streamlit artifacts
+legacy/streamlit/.venv/
+legacy/streamlit/__pycache__/
