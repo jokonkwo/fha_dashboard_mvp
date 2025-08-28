@@ -5,3 +5,9 @@ data/*.duckdb
 .DS_Store
 # Ignore virtual environments
 venv/
+
+# Local env & generated data
+.venv/
+__pycache__/
+*.pyc
+data/processed/
